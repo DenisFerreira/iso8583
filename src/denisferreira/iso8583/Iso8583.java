@@ -1,6 +1,5 @@
 package denisferreira.iso8583;
 
-import denisferreira.iso8583.exception.FieldFormatException;
 import denisferreira.iso8583.exception.FieldKeyNotFoundException;
 import denisferreira.iso8583.exception.ISOMessageNotCorrectFormatException;
 
@@ -15,18 +14,15 @@ import java.util.logging.Logger;
 public class Iso8583 {
 
     protected Map<Integer, Field> fieldsCfg;
-    private Map<Integer, String> fields = new HashMap<>();
-
-    public Map<Integer, Field> getFieldsCfg() {
-        return fieldsCfg;
-    }
-
-    public void setFieldsCfg(Map<Integer, Field> configuracoesCampos) {
-        this.fieldsCfg = configuracoesCampos;
-    }
-
     protected String mti;
-    private Logger logger = Logger.getLogger("ISO8583");
+    private Map<Integer, String> fields = new HashMap<>();
+    private final Logger logger = Logger.getLogger("ISO8583");
+
+    public Iso8583() {
+        if (fieldsCfg == null) {
+            configureFields();
+        }
+    }
 
     private void configureFields() {
         fieldsCfg = new HashMap<>();
@@ -54,10 +50,11 @@ public class Iso8583 {
         fieldsCfg.put(21, new Field(21, Field.FIXED | Field.NUMERIC, 3, "Forwarding institution (country code)"));
         fieldsCfg.put(22, new Field(22, Field.FIXED | Field.NUMERIC, 3, "Point of service entry mode"));
         fieldsCfg.put(23, new Field(23, Field.FIXED | Field.NUMERIC, 3, "Application PAN sequence number"));
-        fieldsCfg.put(25, new Field(24, Field.FIXED | Field.NUMERIC, 3, "Function code (ISO 8583:1993), or network international identifier (NII)"));
-        fieldsCfg.put(26, new Field(24, Field.FIXED | Field.NUMERIC, 3, "Function code (ISO 8583:1993), or network international identifier (NII)"));
-        fieldsCfg.put(27, new Field(24, Field.FIXED | Field.NUMERIC, 3, "Function code (ISO 8583:1993), or network international identifier (NII)"));
-        fieldsCfg.put(28, new Field(24, Field.FIXED | Field.NUMERIC, 3, "Function code (ISO 8583:1993), or network international identifier (NII)"));
+        fieldsCfg.put(24, new Field(24, Field.FIXED | Field.NUMERIC, 3, "Function code (ISO 8583:1993), or network international identifier (NII)"));
+        fieldsCfg.put(25, new Field(25, Field.FIXED | Field.NUMERIC, 2, "Point of service condition code"));
+        fieldsCfg.put(26, new Field(26, Field.FIXED | Field.NUMERIC, 2, "Point of service capture code"));
+        fieldsCfg.put(27, new Field(27, Field.FIXED | Field.NUMERIC, 1, "Authorizing identification response length"));
+        fieldsCfg.put(28, new Field(28, Field.FIXED | Field.NUMERIC, 3, "Amount, transaction fee"));
         fieldsCfg.put(29, new Field(24, Field.FIXED | Field.NUMERIC, 3, "Function code (ISO 8583:1993), or network international identifier (NII)"));
         fieldsCfg.put(30, new Field(24, Field.FIXED | Field.NUMERIC, 3, "Function code (ISO 8583:1993), or network international identifier (NII)"));
         fieldsCfg.put(31, new Field(24, Field.FIXED | Field.NUMERIC, 3, "Function code (ISO 8583:1993), or network international identifier (NII)"));
@@ -138,12 +135,6 @@ public class Iso8583 {
 
     }
 
-    public Iso8583() {
-        if (fieldsCfg == null) {
-            configureFields();
-        }
-    }
-
     public String serialize() {
         StringBuffer output = new StringBuffer();
         logger.log(Level.INFO, "MTI: " + getMti());
@@ -178,11 +169,8 @@ public class Iso8583 {
                 logger.log(Level.SEVERE, "Bit " + bit + ": not found bit!");
                 throw new FieldKeyNotFoundException(bit);
             }
+            myField.serializeField(getField(bit), output);
 
-            if (myField.serializeField(getField(bit), output) == -1) {
-                logger.log(Level.SEVERE, "Bit " + bit + ": badly formatted bit");
-                throw new FieldFormatException(bit, myField.getFormat(), getField(bit));
-            }
             logger.log(Level.INFO, "Req Bit:" + ((bit < 10) ? (" " + bit) : bit) + " = " + getField(bit) + " # "
                     + myField.getDescription());
         }
@@ -283,6 +271,14 @@ public class Iso8583 {
 
     public void setFields(Map<Integer, String> fields) {
         this.fields = fields;
+    }
+
+    public Map<Integer, Field> getFieldsCfg() {
+        return fieldsCfg;
+    }
+
+    public void setFieldsCfg(Map<Integer, Field> configuracoesCampos) {
+        this.fieldsCfg = configuracoesCampos;
     }
 
     @Override
